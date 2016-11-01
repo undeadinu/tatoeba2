@@ -582,8 +582,11 @@ class Sentence extends AppModel
     }
 
     /**
-     * Override standard paginateCount method to eliminate unnecessary joins.
-     * If $conditions is empty, as in Sphinx search, return default behavior.
+     * Override standard paginateCount for optimization purpose.
+     *
+     * 1. We make sure there is no unnecessary joins.
+     * 2. When there are conditions on the language or on the audio, we read
+     * the stats from the `languages` table.
      *
      * @param  array   $conditions
      * @param  integer $recursive
@@ -599,7 +602,56 @@ class Sentence extends AppModel
         $parameters = compact('conditions');
         $extra['contain'] = [];
 
-        return $this->find('count', array_merge($parameters, $extra));
+        $keys = array_keys($conditions);
+        $langCondition = array_filter($keys, function($item) {
+            return strpos($item, 'lang') !== false;
+        });
+        $audioCondition = array_filter($keys, function($item) {
+            return strpos($item, 'hasaudio') !== false;
+        });
+        $hasAudio = $audioCondition && (
+            isset($conditions['hasaudio']) && $conditions['hasaudio'] == 'shtooka' ||
+            isset($conditions['hasaudio !=']) && $conditions['hasaudio !='] == 'no'
+        );
+
+        if ($langCondition && $audioCondition && $hasAudio) {
+
+            $result = $this->Language->find('first', array(
+                'fields' => array('audio'),
+                'conditions' => array(
+                    'code' => $conditions[reset($langCondition)]
+                )
+            ));
+
+            return $result['Language']['audio'];
+
+        } else  if ($langCondition && count($keys) == 1) {
+
+            $result = $this->Language->find('first', array(
+                'fields' => array('sentences'),
+                'conditions' => array(
+                    'code' => $conditions[reset($langCondition)]
+                )
+            ));
+
+            return $result['Language']['sentences'];
+
+        } else if ($audioCondition && count($keys) == 1) {
+
+            $result = $this->Language->find('first', array(
+                'fields' => array('SUM(audio) as total_audio'),
+                'conditions' => array(
+                    'audio >' => 0
+                )
+            ));
+
+            return $result[0]['total_audio'];
+
+        } else {
+
+            return $this->find('count', array_merge($parameters, $extra));
+
+        }
     }
 
     /**
@@ -1072,16 +1124,17 @@ class Sentence extends AppModel
         $key = 'audio_stats';
         $stats = Cache::read($key);
         if ($stats === false) {
-            $results = $this->query(
-                "SELECT lang, COUNT(*) total FROM sentences AS `Sentence`
-                  WHERE hasaudio IN ('shtooka', 'from_users')
-                  GROUP BY lang ORDER BY total DESC;"
-            );
+            $results = $this->Language->find('all', array(
+                'fields' => array('code', 'audio'),
+                'conditions' => array('audio >' => 0),
+                'order' => 'audio DESC'
+            ));
+
             $stats = array();
             foreach ($results as $result) {
                 $stats[] = array(
-                    'lang' => $result['Sentence']['lang'],
-                    'total' => $result[0]['total']
+                    'lang' => $result['Language']['code'],
+                    'total' => $result['Language']['audio']
                 );
             }
             Cache::write($key, $stats);

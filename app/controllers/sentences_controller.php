@@ -1150,10 +1150,8 @@ class SentencesController extends AppController
         // if the lang is specified then we also filter on the language
         if (!empty($lang)) {
             $conditions = array(
-                "AND" => array(
-                    'Sentence.user_id' => $userId,
-                    'Sentence.lang' => $lang
-                )
+                'Sentence.user_id' => $userId,
+                'Sentence.lang' => $lang
             );
         }
 
