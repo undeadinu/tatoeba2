@@ -53,7 +53,10 @@ class QueueExportTask extends QueueTask {
         $this->out('You can find the sourcecode of this task in: ');
         $this->out(__FILE__);
         $this->out(' ');
-        if ($this->QueuedTask->createJob('Export', null)) {
+        $options = array(
+            'outFile' => TMP.DS.'sentences.csv',
+        );
+        if ($this->QueuedTask->createJob('Export', $options)) {
             $this->out('OK, job created, now run the worker');
         } else {
             $this->err('Could not create Job');
@@ -82,7 +85,7 @@ class QueueExportTask extends QueueTask {
  * @return bool Success
  */
     public function run($data, $id = null) {
-        $outFile = TMP.DS.'sentences.csv';
+        extract($data);
         $data = $this->Sentence->find('all', array(
             'fields' => array('id', 'lang', 'text'),
             'conditions' => array('correctness >' => -1)
