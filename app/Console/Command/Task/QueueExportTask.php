@@ -85,7 +85,10 @@ class QueueExportTask extends QueueTask {
  * @return bool Success
  */
     public function run($data, $id = null) {
-        return $this->exportData(
+        $dataSource = $this->Sentence->getDataSource();
+        $dataSource->begin();
+
+        $ok = $this->exportData(
             $data['exportDir'].DS.'sentences.csv',
             'Sentence',
             array(
@@ -93,6 +96,9 @@ class QueueExportTask extends QueueTask {
                 'conditions' => array('correctness >' => -1),
             )
         );
+
+        $dataSource->commit();
+        return $ok;
     }
 
     protected function exportRows($rows, $modelName, $fp) {
