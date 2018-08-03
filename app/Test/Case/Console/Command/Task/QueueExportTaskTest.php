@@ -23,6 +23,7 @@ class QueueExportTaskTest extends CakeTestCase
             array('in', 'err', 'createFile', '_stop', 'clear'),
             array($out, $out, $in)
         );
+        $this->QueueExportTask->batchOperationSize = 10;
     }
 
     public function tearDown()
