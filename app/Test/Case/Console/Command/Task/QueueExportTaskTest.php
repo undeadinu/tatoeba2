@@ -40,7 +40,7 @@ class QueueExportTaskTest extends CakeTestCase
         return $str;
     }
 
-    public function testRun()
+    public function testExportData()
     {
         $expected = TMP.DS.'expected.csv';
         $text = $this->manyWeirdChars();
@@ -61,9 +61,16 @@ class QueueExportTaskTest extends CakeTestCase
 
         $actual = TMP.DS.'sentences.csv';
         $options = array(
-            'outFile' => $actual,
+            'exportDir' => TMP,
         );
-        $this->QueueExportTask->run($options);
+        $this->QueueExportTask->exportData(
+            $actual,
+            'Sentence',
+            array(
+                'fields' => array('id', 'lang', 'text'),
+                'conditions' => array('correctness >' => -1),
+            )
+        );
 
         $this->assertEquals(sha1_file($expected), sha1_file($actual));
         @unlink($expected);

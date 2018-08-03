@@ -54,7 +54,7 @@ class QueueExportTask extends QueueTask {
         $this->out(__FILE__);
         $this->out(' ');
         $options = array(
-            'outFile' => TMP.DS.'sentences.csv',
+            'exportDir' => TMP,
         );
         if ($this->QueuedTask->createJob('Export', $options)) {
             $this->out('OK, job created, now run the worker');
@@ -85,11 +85,18 @@ class QueueExportTask extends QueueTask {
  * @return bool Success
  */
     public function run($data, $id = null) {
-        extract($data);
-        $data = $this->Sentence->find('all', array(
-            'fields' => array('id', 'lang', 'text'),
-            'conditions' => array('correctness >' => -1)
-        ));
+        return $this->exportData(
+            $data['exportDir'].DS.'sentences.csv',
+            'Sentence',
+            array(
+                'fields' => array('id', 'lang', 'text'),
+                'conditions' => array('correctness >' => -1),
+            )
+        );
+    }
+
+    public function exportData($outFile, $modelName, $findOptions) {
+        $data = $this->{$modelName}->find('all', $findOptions);
         $fp = fopen($outFile, 'w');
         foreach ($data as $row) {
             $this->fputcsvLikeMySQL($fp, $row[$this->Sentence->alias]);
