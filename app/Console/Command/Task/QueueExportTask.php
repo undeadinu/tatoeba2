@@ -95,12 +95,20 @@ class QueueExportTask extends QueueTask {
         );
     }
 
-    public function exportData($outFile, $modelName, $findOptions) {
-        $data = $this->{$modelName}->find('all', $findOptions);
-        $fp = fopen($outFile, 'w');
-        foreach ($data as $row) {
-            $this->fputcsvLikeMySQL($fp, $row[$this->Sentence->alias]);
+    protected function exportRows($rows, $modelName, $fp) {
+        foreach ($rows as $row) {
+            $this->fputcsvLikeMySQL($fp, $row[$modelName]);
         }
+    }
+
+    public function exportData($outFile, $modelName, $findOptions) {
+        $fp = fopen($outFile, 'w');
+        $proceeded = $this->batchOperation(
+            $modelName,
+            'exportRows',
+            $findOptions,
+            $fp
+        );
         fclose($fp);
         $this->out(' ');
         $this->out("Wrote $outFile");
