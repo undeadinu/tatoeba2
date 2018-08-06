@@ -98,4 +98,25 @@ class QueueExportTaskTest extends CakeTestCase
         exec("tar Oxf $expectedFile", $archiveContents);
         $this->assertEquals($expectedContents, $archiveContents);
     }
+
+    public function testRun()
+    {
+        $options = array(
+            'exportDir' => TMP,
+            'exports' => array(
+                'sentences.csv' => array(
+                    'model' => 'Sentence',
+                    'findOptions' => array(
+                        'fields' => array('id', 'lang', 'text'),
+                        'conditions' => array('correctness >' => -1),
+                    ),
+                ),
+            ),
+        );
+        $expectedFile = TMP.DS.'sentences.tar.bz2';
+
+        $this->QueueExportTask->run($options);
+
+        $this->assertFileExists($expectedFile);
+    }
 }
