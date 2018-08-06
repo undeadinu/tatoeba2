@@ -63,6 +63,27 @@ class QueueExportTask extends QueueTask {
         }
     }
 
+    public function compressFile($file) {
+        $archive = substr($file, 0, strrpos($file, '.')).'.tar.bz2';
+        $descriptorSpec = array(
+           0 => array('pipe', 'r'),
+           1 => array('file', $archive, 'w'),
+           2 => array('pipe', 'w'),
+        );
+        $cwd = dirname($file);
+        $process = proc_open('tar -T - -jc', $descriptorSpec, $pipes, $cwd);
+        if (is_resource($process)) {
+            fwrite($pipes[0], basename($file));
+            fclose($pipes[0]);
+            do {
+                usleep(500000);
+                $status = proc_get_status($process);
+            } while (is_array($status) && $status['running']);
+            fclose($pipes[2]);
+            proc_close($process);
+        }
+    }
+
     private function fputcsvLikeMySQL($fh, $fields) {
         foreach ($fields as &$field) {
             if (is_null($field)) {
@@ -96,6 +117,9 @@ class QueueExportTask extends QueueTask {
                 'conditions' => array('correctness >' => -1),
             )
         );
+        if ($ok) {
+            $this->compressFile($data['exportDir'].DS.'sentences.csv');
+        }
 
         $dataSource->commit();
         return $ok;

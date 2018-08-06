@@ -77,4 +77,25 @@ class QueueExportTaskTest extends CakeTestCase
         @unlink($expected);
         @unlink($actual);
     }
+
+    public function testCompressFile()
+    {
+        $file = TMP.DS.'export.csv';
+        $contents = "Some data.\nAnother line.";
+        file_put_contents($file, $contents);
+
+        $expectedFile = TMP.DS.'export.tar.bz2';
+        $expectedIndex = array(basename($file));
+        $expectedContents = explode("\n", $contents);
+
+        $this->QueueExportTask->compressFile($file);
+
+        $this->assertFileExists($expectedFile);
+
+        exec("tar tf $expectedFile", $archiveIndex);
+        $this->assertEquals($expectedIndex, $archiveIndex);
+
+        exec("tar Oxf $expectedFile", $archiveContents);
+        $this->assertEquals($expectedContents, $archiveContents);
+    }
 }
