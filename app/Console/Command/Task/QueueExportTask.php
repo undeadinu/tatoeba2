@@ -53,18 +53,18 @@ class QueueExportTask extends QueueTask {
  * @return void
  */
     public function add() {
-        $this->out('Tatoeba exports task.');
-        $this->hr();
-        $this->out('This task generates the daily CSV exports in XXX.');
-        $this->out(' ');
-        $this->out('To run a Worker use:');
-        $this->out('    cake Queue.Queue runworker');
-        $this->out(' ');
-        $this->out('You can find the sourcecode of this task in: ');
-        $this->out(__FILE__);
-        $this->out(' ');
+        $exportDir = isset($this->args[1]) ? $this->args[1] : '';
+        if (!is_dir($exportDir)) {
+            if (!empty($exportDir)) {
+                $this->out("Error: '$exportDir' is not a directory.");
+            }
+            $this->out('Usage: cake Queue.Queue add Export <export-dir>');
+            return;
+        }
+
+        $exports = $this->weeklyExports;
         $options = array(
-            'exportDir' => TMP,
+            'exportDir' => $exportDir,
             'exports' => $this->weeklyExports,
         );
         if ($this->QueuedTask->createJob('Export', $options)) {
