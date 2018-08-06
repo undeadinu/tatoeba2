@@ -8,6 +8,16 @@ class QueueExportTask extends QueueTask {
         'Sentence',
     );
 
+    private $weeklyExports = array(
+        'sentences.csv' => array(
+            'model' => 'Sentence',
+            'findOptions' => array(
+                'fields' => array('id', 'lang', 'text'),
+                'conditions' => array('correctness >' => -1),
+            ),
+        ),
+    );
+
 /**
  * ZendStudio Codecomplete Hint
  *
@@ -55,6 +65,7 @@ class QueueExportTask extends QueueTask {
         $this->out(' ');
         $options = array(
             'exportDir' => TMP,
+            'exports' => $this->weeklyExports,
         );
         if ($this->QueuedTask->createJob('Export', $options)) {
             $this->out('OK, job created, now run the worker');
@@ -109,16 +120,16 @@ class QueueExportTask extends QueueTask {
         $dataSource = $this->Sentence->getDataSource();
         $dataSource->begin();
 
-        $ok = $this->exportData(
-            $data['exportDir'].DS.'sentences.csv',
-            'Sentence',
-            array(
-                'fields' => array('id', 'lang', 'text'),
-                'conditions' => array('correctness >' => -1),
-            )
-        );
-        if ($ok) {
-            $this->compressFile($data['exportDir'].DS.'sentences.csv');
+        foreach ($data['exports'] as $filename => $export) {
+            $completeFilename = $data['exportDir'].DS.$filename;
+            $ok = $this->exportData(
+                $completeFilename,
+                $export['model'],
+                $export['findOptions']
+            );
+            if ($ok) {
+                $this->compressFile($completeFilename);
+            }
         }
 
         $dataSource->commit();
