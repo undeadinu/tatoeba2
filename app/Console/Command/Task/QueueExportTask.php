@@ -7,6 +7,7 @@ class QueueExportTask extends QueueTask {
     public $uses = array(
         'Sentence',
         'Link',
+        'Contribution',
     );
 
     private $weeklyExports = array(

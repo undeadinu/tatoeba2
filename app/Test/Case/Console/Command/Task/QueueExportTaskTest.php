@@ -136,6 +136,37 @@ class QueueExportTaskTest extends CakeTestCase
         @unlink($actual);
     }
 
+    public function testExportDataWithoutOrderingOnPrimaryKey()
+    {
+        $expected = TMP.DS.'expected.csv';
+        @unlink($expected);
+        $this->QueueExportTask->Sentence->query(
+            "SELECT u.username, c.datetime, c.action, c.type, c.sentence_id, "
+           ."c.sentence_lang, c.translation_id, c.text "
+           ."FROM contributions c LEFT JOIN users u ON c.user_id = u.id "
+           ."ORDER BY c.datetime ASC "
+           ."INTO OUTFILE '$expected'"
+        );
+
+        $actual = TMP.DS.'contributions.csv';
+        $options = array(
+            'exportDir' => TMP,
+        );
+        $this->QueueExportTask->exportData(
+            $actual,
+            'Contribution',
+            array(
+                'fields' => array('User.username', 'datetime', 'action', 'type', 'sentence_id', 'sentence_lang', 'translation_id', 'text'),
+                'contain' => array('User'),
+                'order' => 'datetime',
+            )
+        );
+
+        $this->assertEquals(sha1_file($expected), sha1_file($actual));
+        @unlink($expected);
+        @unlink($actual);
+    }
+
     public function testCompressFile()
     {
         $file = TMP.DS.'export.csv';
