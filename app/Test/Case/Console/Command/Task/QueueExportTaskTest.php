@@ -138,6 +138,7 @@ class QueueExportTaskTest extends CakeTestCase
 
     public function testExportDataWithoutOrderingOnPrimaryKey()
     {
+        $this->QueueExportTask->batchOperationSize = 1;
         $expected = TMP.DS.'expected.csv';
         @unlink($expected);
         $this->QueueExportTask->Sentence->query(
@@ -158,7 +159,7 @@ class QueueExportTaskTest extends CakeTestCase
             array(
                 'fields' => array('User.username', 'datetime', 'action', 'type', 'sentence_id', 'sentence_lang', 'translation_id', 'text'),
                 'contain' => array('User'),
-                'order' => 'datetime',
+                'order' => 'Contribution.datetime',
             )
         );
 

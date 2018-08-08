@@ -28,20 +28,45 @@ App::uses('Shell', 'Console');
 class AppShell extends Shell {
     public $batchOperationSize = 1000;
 
+    private function _orderCondition($nonUniqueField, $lastValue, $pKey, $lastId) {
+        if ($nonUniqueField == $pKey) {
+            return array("$pKey >" => $lastId);
+        } else {
+            return array('AND' => array(
+                "$nonUniqueField >=" => $lastValue,
+                array('OR' => array(
+                    "$nonUniqueField >" => $lastValue,
+                    array('AND' => array(
+                        $nonUniqueField => $lastValue,
+                        "$pKey >" => $lastId,
+                    )),
+                )),
+            ));
+        }
+    }
+
     protected function batchOperation($model, $operation, $options) {
+        assert(!isset($options['order']) || (is_string($options['order']) && strpos($options['order'], '.') !== false));
+
         $pKey = $this->{$model}->alias.'.'.$this->{$model}->primaryKey;
         $pKeyShort = $this->{$model}->primaryKey;
+
+        if (!isset($options['order']) || (isset($options['order']) && $options['order'] == $pKeyShort)) {
+            $options['order'] = $pKey;
+        }
+        $order = $options['order'];
+        if ($order != $pKey) {
+            $options['order'] = array($order, $pKey);
+        }
         if (isset($options['fields'])) {
-            if (!in_array($pKey, $options['fields']) && !in_array($pKeyShort, $options['fields'])) {
-                $options['fields'][] = $pKey;
-            }
+            $options['fields'][] = $order;
+            $options['fields'][] = $pKey;
         }
 
         $proceeded = 0;
         $options = array_merge(
             array(
                 'limit' => $this->batchOperationSize,
-                'order' => "$pKey ASC",
             ),
             $options
         );
@@ -49,11 +74,12 @@ class AppShell extends Shell {
         if (!isset($options['conditions'])) {
             $options['conditions'] = array();
         }
-        $options['conditions'] = array_merge(
-            array("$pKey >" => 0),
-            $options['conditions']
-        );
+        $options['conditions'][] = array();
+        end($options['conditions']);
+        $conditionKey = key($options['conditions']);
+        reset($options['conditions']);
 
+        list($orderModel, $orderField) = explode('.', $order);
         $data = array();
         do {
             $data = $this->{$model}->find('all', $options);
@@ -62,8 +88,9 @@ class AppShell extends Shell {
             $proceeded += call_user_func_array(array($this, $operation), $args);
             $lastRow = end($data);
             if ($lastRow) {
-                $lastId = isset($lastRow[$model][$pKey]) ? $lastRow[$model][$pKey] : $lastRow[$model][$pKeyShort];
-                $options['conditions']["$pKey >"] = $lastId;
+                $lastId = $lastRow[$model][$pKeyShort];
+                $lastValue = $lastRow[$orderModel][$orderField];
+                $options['conditions'][$conditionKey] = $this->_orderCondition($order, $lastValue, $pKey, $lastId);
             }
             echo ".";
         } while ($data);
