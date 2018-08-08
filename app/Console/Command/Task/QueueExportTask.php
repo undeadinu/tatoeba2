@@ -30,6 +30,7 @@ class QueueExportTask extends QueueTask {
             'model' => 'Link',
             'findOptions' => array(
                 'fields' => array('sentence_id', 'translation_id'),
+                'order' => 'Link.sentence_id',
             ),
         ),
         'contributions.csv' => array(

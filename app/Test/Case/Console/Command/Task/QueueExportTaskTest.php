@@ -115,7 +115,6 @@ class QueueExportTaskTest extends CakeTestCase
         @unlink($expected);
         $this->QueueExportTask->Sentence->query(
             "SELECT sentence_id, translation_id FROM `sentences_translations` "
-           ."ORDER BY id "
            ."INTO OUTFILE '$expected'"
         );
 
@@ -128,6 +127,7 @@ class QueueExportTaskTest extends CakeTestCase
             'Link',
             array(
                 'fields' => array('sentence_id', 'translation_id'),
+                'order' => 'Link.sentence_id',
             )
         );
 
