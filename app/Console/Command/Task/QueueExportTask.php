@@ -144,8 +144,8 @@ class QueueExportTask extends QueueTask {
         return $ok;
     }
 
-    private function sortFields($row, $modelName, $fields) {
-        $sortedRow = array();
+    private function calculateFieldsMap($row, $modelName, $fields) {
+        $map = array();
         foreach ($fields as $cakeField) {
             $parts = explode('.', $cakeField, 2);
             if (count($parts) == 2) {
@@ -154,14 +154,24 @@ class QueueExportTask extends QueueTask {
                 $model = $modelName;
                 $field = $parts[0];
             }
-            $sortedRow[] = $row[$model][$field];
+            $map[] = array($model, $field);
         }
-        return $sortedRow;
+        return $map;
     }
 
     protected function exportRows($rows, $modelName, $fp, $fields) {
+        if (count($rows) == 0) {
+            return;
+        }
+
+        $fieldsMap = $this->calculateFieldsMap($rows[0], $modelName, $fields);
         foreach ($rows as $row) {
-            $sortedRow = $this->sortFields($row, $modelName, $fields);
+            $sortedRow = array_map(
+                function ($map) use ($row) {
+                    return $row[ $map[0] ][ $map[1] ];
+                },
+                $fieldsMap
+            );
             $this->fputcsvLikeMySQL($fp, $sortedRow);
         }
     }
