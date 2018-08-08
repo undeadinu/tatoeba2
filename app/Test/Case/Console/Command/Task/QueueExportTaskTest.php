@@ -10,6 +10,7 @@ class QueueExportTaskTest extends CakeTestCase
         'app.contribution',
         'app.reindex_flag',
         'app.link',
+        'app.user',
     );
 
     public function setUp()
@@ -70,6 +71,36 @@ class QueueExportTaskTest extends CakeTestCase
             array(
                 'fields' => array('id', 'lang', 'text'),
                 'conditions' => array('correctness >' => -1),
+            )
+        );
+
+        $this->assertEquals(sha1_file($expected), sha1_file($actual));
+        @unlink($expected);
+        @unlink($actual);
+    }
+
+    public function testExportDataWithJoin()
+    {
+        $expected = TMP.DS.'expected.csv';
+        @unlink($expected);
+        $this->QueueExportTask->Sentence->query(
+            "SELECT s.id, s.lang, s.text, u.username, s.created, s.modified "
+           ."FROM `sentences` s LEFT JOIN `users` u ON s.user_id = u.id "
+           ."WHERE correctness > -1 "
+           ."INTO OUTFILE '$expected'"
+        );
+
+        $actual = TMP.DS.'sentences_detailed.csv';
+        $options = array(
+            'exportDir' => TMP,
+        );
+        $this->QueueExportTask->exportData(
+            $actual,
+            'Sentence',
+            array(
+                'fields' => array('id', 'lang', 'text', 'User.username', 'created', 'modified'),
+                'conditions' => array('correctness >' => -1),
+                'contain' => array('User'),
             )
         );
 

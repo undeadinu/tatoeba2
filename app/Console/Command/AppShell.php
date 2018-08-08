@@ -38,7 +38,6 @@ class AppShell extends Shell {
         $proceeded = 0;
         $options = array_merge(
             array(
-                'contain' => array(),
                 'limit' => $this->batchOperationSize,
                 'order' => "$pKey ASC",
             ),

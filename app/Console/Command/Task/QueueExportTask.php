@@ -9,6 +9,14 @@ class QueueExportTask extends QueueTask {
     );
 
     private $weeklyExports = array(
+        'sentences_detailed.csv' => array(
+            'model' => 'Sentence',
+            'findOptions' => array(
+                'fields' => array('id', 'lang', 'text', 'User.username', 'Sentence.created', 'modified'),
+                'conditions' => array('correctness >' => -1),
+                'contain' => array('User'),
+            ),
+        ),
         'sentences.csv' => array(
             'model' => 'Sentence',
             'findOptions' => array(
@@ -136,9 +144,25 @@ class QueueExportTask extends QueueTask {
         return $ok;
     }
 
-    protected function exportRows($rows, $modelName, $fp) {
+    private function sortFields($row, $modelName, $fields) {
+        $sortedRow = array();
+        foreach ($fields as $cakeField) {
+            $parts = explode('.', $cakeField, 2);
+            if (count($parts) == 2) {
+                list($model, $field) = $parts;
+            } else {
+                $model = $modelName;
+                $field = $parts[0];
+            }
+            $sortedRow[] = $row[$model][$field];
+        }
+        return $sortedRow;
+    }
+
+    protected function exportRows($rows, $modelName, $fp, $fields) {
         foreach ($rows as $row) {
-            $this->fputcsvLikeMySQL($fp, $row[$modelName]);
+            $sortedRow = $this->sortFields($row, $modelName, $fields);
+            $this->fputcsvLikeMySQL($fp, $sortedRow);
         }
     }
 
@@ -148,7 +172,8 @@ class QueueExportTask extends QueueTask {
             $modelName,
             'exportRows',
             $findOptions,
-            $fp
+            $fp,
+            $findOptions['fields']
         );
         fclose($fp);
         $this->out(' ');
