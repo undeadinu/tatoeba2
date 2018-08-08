@@ -32,6 +32,14 @@ class QueueExportTask extends QueueTask {
                 'fields' => array('sentence_id', 'translation_id'),
             ),
         ),
+        'contributions.csv' => array(
+            'model' => 'Contribution',
+            'findOptions' => array(
+                'fields' => array('User.username', 'datetime', 'action', 'type', 'sentence_id', 'sentence_lang', 'translation_id', 'text'),
+                'contain' => array('User'),
+                'order' => 'Contribution.datetime',
+            ),
+        ),
     );
 
 /**
