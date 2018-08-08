@@ -32,7 +32,9 @@ class AppShell extends Shell {
         $pKey = $this->{$model}->alias.'.'.$this->{$model}->primaryKey;
         $pKeyShort = $this->{$model}->primaryKey;
         if (isset($options['fields'])) {
-            assert(in_array($pKey, $options['fields']) || in_array($pKeyShort, $options['fields']));
+            if (!in_array($pKey, $options['fields']) && !in_array($pKeyShort, $options['fields'])) {
+                $options['fields'][] = $pKey;
+            }
         }
 
         $proceeded = 0;

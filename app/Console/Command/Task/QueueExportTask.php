@@ -6,6 +6,7 @@ class QueueExportTask extends QueueTask {
 
     public $uses = array(
         'Sentence',
+        'Link',
     );
 
     private $weeklyExports = array(
@@ -22,6 +23,12 @@ class QueueExportTask extends QueueTask {
             'findOptions' => array(
                 'fields' => array('id', 'lang', 'text'),
                 'conditions' => array('correctness >' => -1),
+            ),
+        ),
+        'links.csv' => array(
+            'model' => 'Link',
+            'findOptions' => array(
+                'fields' => array('sentence_id', 'translation_id'),
             ),
         ),
     );
