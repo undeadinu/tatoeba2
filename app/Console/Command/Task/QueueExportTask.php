@@ -13,6 +13,7 @@ class QueueExportTask extends QueueTask {
         'Tag',
         'SentencesList',
         'SentencesSentencesLists',
+        'SentenceAnnotation',
     );
 
     private $weeklyExports = array(
@@ -94,6 +95,12 @@ class QueueExportTask extends QueueTask {
                 'contain' => array('SentencesList'),
                 'conditions' => array('NOT' => array('SentencesList.visibility' => 'private')),
                 'order' => array('SentencesList.id', 'SentencesSentencesLists.sentence_id')
+            ),
+        ),
+        'jpn_indices.csv' => array(
+            'model' => 'SentenceAnnotation',
+            'findOptions' => array(
+                'fields' => array('sentence_id', 'meaning_id', 'text'),
             ),
         ),
     );
