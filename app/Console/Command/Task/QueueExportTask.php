@@ -285,8 +285,6 @@ class QueueExportTask extends QueueTask {
             $findOptions['fields']
         );
         fclose($fp);
-        $this->out(' ');
-        $this->out("Wrote $outFile");
         return true;
     }
 }
