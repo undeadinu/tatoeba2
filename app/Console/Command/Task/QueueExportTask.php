@@ -40,6 +40,7 @@ class QueueExportTask extends QueueTask {
                 'contain' => array('User'),
                 'order' => 'Contribution.datetime',
             ),
+            'remove_csv_file' => true,
         ),
     );
 
@@ -154,6 +155,9 @@ class QueueExportTask extends QueueTask {
             );
             if ($ok) {
                 $this->compressFile($completeFilename);
+            }
+            if (isset($export['remove_csv_file']) && $export['remove_csv_file']) {
+                unlink($completeFilename);
             }
         }
 

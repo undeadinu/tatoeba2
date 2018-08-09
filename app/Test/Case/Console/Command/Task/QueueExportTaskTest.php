@@ -203,10 +203,35 @@ class QueueExportTaskTest extends CakeTestCase
                 ),
             ),
         );
-        $expectedFile = TMP.DS.'sentences.tar.bz2';
+        $expectedArchive = TMP.DS.'sentences.tar.bz2';
+        $expectedCSV = TMP.DS.'sentences.csv';
 
         $this->QueueExportTask->run($options);
 
-        $this->assertFileExists($expectedFile);
+        $this->assertFileExists($expectedArchive);
+        $this->assertFileExists($expectedCSV);
+    }
+
+    public function testRunRemovesCSV()
+    {
+        $options = array(
+            'exportDir' => TMP,
+            'exports' => array(
+                'text.csv' => array(
+                    'model' => 'Sentence',
+                    'findOptions' => array(
+                        'fields' => array('id', 'text'),
+                    ),
+                    'remove_csv_file' => true,
+                ),
+            ),
+        );
+        $expectedArchive = TMP.DS.'text.tar.bz2';
+        $notExpectedCSV = TMP.DS.'text.csv';
+
+        $this->QueueExportTask->run($options);
+
+        $this->assertFileExists($expectedArchive);
+        $this->assertFileNotExists($notExpectedCSV);
     }
 }
