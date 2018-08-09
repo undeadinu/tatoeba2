@@ -25,12 +25,39 @@ class QueueExportTaskTest extends CakeTestCase
             array($out, $out, $in)
         );
         $this->QueueExportTask->batchOperationSize = 10;
+
+        $this->testExportDir = TMP.'testExportDir';
+        $this->removeDirRecursively($this->testExportDir);
+        mkdir($this->testExportDir);
+        if (!is_dir($this->testExportDir)) {
+            die("Couldn't create test directory '{$this->testExportDir}'");
+        }
+        chmod($this->testExportDir, 0777);
+    }
+
+    private function removeDirRecursively($dir)
+    {
+        if (is_dir($dir)) {
+            $objects = scandir($dir);
+            foreach ($objects as $object) {
+                if ($object != '.' && $object != '..') {
+                    if (filetype($dir.'/'.$object) == 'dir') {
+                        $this->removeDirRecursively($dir.'/'.$object);
+                    } else {
+                        unlink($dir.'/'.$object);
+                    }
+                }
+            }
+            reset($objects);
+            rmdir($dir);
+        }
     }
 
     public function tearDown()
     {
         parent::tearDown();
         unset($this->QueueExportTask);
+        $this->removeDirRecursively($this->testExportDir);
     }
 
     private function manyWeirdChars()
@@ -44,7 +71,7 @@ class QueueExportTaskTest extends CakeTestCase
 
     public function testExportData()
     {
-        $expected = TMP.DS.'expected.csv';
+        $expected = $this->testExportDir.DS.'expected.csv';
         $text = $this->manyWeirdChars();
         // Bypass the model layer to prevent $text from being cleaned
         $db = $this->QueueExportTask->Sentence->getDataSource();
@@ -54,16 +81,15 @@ class QueueExportTaskTest extends CakeTestCase
             array('eng', 7, $text)
         );
 
-        @unlink($expected);
         $this->QueueExportTask->Sentence->query(
             "SELECT id, lang, text FROM `sentences` "
            ."WHERE correctness > -1 "
            ."INTO OUTFILE '$expected'"
         );
 
-        $actual = TMP.DS.'sentences.csv';
+        $actual = $this->testExportDir.DS.'sentences.csv';
         $options = array(
-            'exportDir' => TMP,
+            'exportDir' => $this->testExportDir,
         );
         $this->QueueExportTask->exportData(
             $actual,
@@ -75,14 +101,11 @@ class QueueExportTaskTest extends CakeTestCase
         );
 
         $this->assertEquals(sha1_file($expected), sha1_file($actual));
-        @unlink($expected);
-        @unlink($actual);
     }
 
     public function testExportDataWithJoin()
     {
-        $expected = TMP.DS.'expected.csv';
-        @unlink($expected);
+        $expected = $this->testExportDir.DS.'expected.csv';
         $this->QueueExportTask->Sentence->query(
             "SELECT s.id, s.lang, s.text, u.username, s.created, s.modified "
            ."FROM `sentences` s LEFT JOIN `users` u ON s.user_id = u.id "
@@ -90,9 +113,9 @@ class QueueExportTaskTest extends CakeTestCase
            ."INTO OUTFILE '$expected'"
         );
 
-        $actual = TMP.DS.'sentences_detailed.csv';
+        $actual = $this->testExportDir.DS.'sentences_detailed.csv';
         $options = array(
-            'exportDir' => TMP,
+            'exportDir' => $this->testExportDir,
         );
         $this->QueueExportTask->exportData(
             $actual,
@@ -105,22 +128,19 @@ class QueueExportTaskTest extends CakeTestCase
         );
 
         $this->assertEquals(sha1_file($expected), sha1_file($actual));
-        @unlink($expected);
-        @unlink($actual);
     }
 
     public function testExportDataWithoutPrimaryKey()
     {
-        $expected = TMP.DS.'expected.csv';
-        @unlink($expected);
+        $expected = $this->testExportDir.DS.'expected.csv';
         $this->QueueExportTask->Sentence->query(
             "SELECT sentence_id, translation_id FROM `sentences_translations` "
            ."INTO OUTFILE '$expected'"
         );
 
-        $actual = TMP.DS.'links.csv';
+        $actual = $this->testExportDir.DS.'links.csv';
         $options = array(
-            'exportDir' => TMP,
+            'exportDir' => $this->testExportDir,
         );
         $this->QueueExportTask->exportData(
             $actual,
@@ -132,15 +152,12 @@ class QueueExportTaskTest extends CakeTestCase
         );
 
         $this->assertEquals(sha1_file($expected), sha1_file($actual));
-        @unlink($expected);
-        @unlink($actual);
     }
 
     public function testExportDataWithoutOrderingOnPrimaryKey()
     {
         $this->QueueExportTask->batchOperationSize = 1;
-        $expected = TMP.DS.'expected.csv';
-        @unlink($expected);
+        $expected = $this->testExportDir.DS.'expected.csv';
         $this->QueueExportTask->Sentence->query(
             "SELECT u.username, c.datetime, c.action, c.type, c.sentence_id, "
            ."c.sentence_lang, c.translation_id, c.text "
@@ -149,9 +166,9 @@ class QueueExportTaskTest extends CakeTestCase
            ."INTO OUTFILE '$expected'"
         );
 
-        $actual = TMP.DS.'contributions.csv';
+        $actual = $this->testExportDir.DS.'contributions.csv';
         $options = array(
-            'exportDir' => TMP,
+            'exportDir' => $this->testExportDir,
         );
         $this->QueueExportTask->exportData(
             $actual,
@@ -164,17 +181,15 @@ class QueueExportTaskTest extends CakeTestCase
         );
 
         $this->assertEquals(sha1_file($expected), sha1_file($actual));
-        @unlink($expected);
-        @unlink($actual);
     }
 
     public function testCompressFile()
     {
-        $file = TMP.DS.'export.csv';
+        $file = $this->testExportDir.DS.'export.csv';
         $contents = "Some data.\nAnother line.";
         file_put_contents($file, $contents);
 
-        $expectedFile = TMP.DS.'export.tar.bz2';
+        $expectedFile = $this->testExportDir.DS.'export.tar.bz2';
         $expectedIndex = array(basename($file));
         $expectedContents = explode("\n", $contents);
 
@@ -192,7 +207,7 @@ class QueueExportTaskTest extends CakeTestCase
     public function testRun()
     {
         $options = array(
-            'exportDir' => TMP,
+            'exportDir' => $this->testExportDir,
             'exports' => array(
                 'sentences.csv' => array(
                     'model' => 'Sentence',
@@ -203,8 +218,8 @@ class QueueExportTaskTest extends CakeTestCase
                 ),
             ),
         );
-        $expectedArchive = TMP.DS.'sentences.tar.bz2';
-        $expectedCSV = TMP.DS.'sentences.csv';
+        $expectedArchive = $this->testExportDir.DS.'sentences.tar.bz2';
+        $expectedCSV = $this->testExportDir.DS.'sentences.csv';
 
         $this->QueueExportTask->run($options);
 
@@ -215,7 +230,7 @@ class QueueExportTaskTest extends CakeTestCase
     public function testRunRemovesCSV()
     {
         $options = array(
-            'exportDir' => TMP,
+            'exportDir' => $this->testExportDir,
             'exports' => array(
                 'text.csv' => array(
                     'model' => 'Sentence',
@@ -226,8 +241,8 @@ class QueueExportTaskTest extends CakeTestCase
                 ),
             ),
         );
-        $expectedArchive = TMP.DS.'text.tar.bz2';
-        $notExpectedCSV = TMP.DS.'text.csv';
+        $expectedArchive = $this->testExportDir.DS.'text.tar.bz2';
+        $notExpectedCSV = $this->testExportDir.DS.'text.csv';
 
         $this->QueueExportTask->run($options);
 
