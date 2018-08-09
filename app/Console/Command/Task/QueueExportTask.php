@@ -9,6 +9,7 @@ class QueueExportTask extends QueueTask {
         'Link',
         'Contribution',
         'SentenceComment',
+        'Wall',
     );
 
     private $weeklyExports = array(
@@ -52,6 +53,16 @@ class QueueExportTask extends QueueTask {
             ),
             'remove_csv_file' => true,
             'archive_name' => 'comments.tar.bz2',
+        ),
+        'wall_posts.csv' => array(
+            'model' => 'Wall',
+            'findOptions' => array(
+                'fields' => array('id', 'User.username', 'parent_id', 'date', 'content'),
+                'contain' => array('User'),
+                'order' => 'Wall.id',
+            ),
+            'remove_csv_file' => true,
+            'archive_name' => 'wall.tar.bz2',
         ),
     );
 
