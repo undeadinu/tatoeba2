@@ -160,12 +160,6 @@ class QueueExportTask extends QueueTask {
  */
     public $failureMessage = '';
 
-/**
- * Example add functionality.
- * Will create one example job in the queue, which later will be executed using run();
- *
- * @return void
- */
     public function add() {
         $exportDir = isset($this->args[1]) ? $this->args[1] : '';
         if (!is_dir($exportDir)) {
@@ -223,15 +217,6 @@ class QueueExportTask extends QueueTask {
         fputs($fh, implode($fields, "\t")."\n");
     }
 
-/**
- * Example run function.
- * This function is executed, when a worker is executing a task.
- * The return parameter will determine, if the task will be marked completed, or be requeued.
- *
- * @param array $data The array passed to QueuedTask->createJob()
- * @param int $id The id of the QueuedTask
- * @return bool Success
- */
     public function run($data, $id = null) {
         $dataSource = $this->Sentence->getDataSource();
         $dataSource->begin();
