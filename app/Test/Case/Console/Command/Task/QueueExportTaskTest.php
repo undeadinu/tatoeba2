@@ -176,7 +176,7 @@ class QueueExportTaskTest extends CakeTestCase
             array(
                 'fields' => array('User.username', 'datetime', 'action', 'type', 'sentence_id', 'sentence_lang', 'translation_id', 'text'),
                 'contain' => array('User'),
-                'order' => 'Contribution.datetime',
+                'order' => array('Contribution.datetime', 'Contribution.id'),
             )
         );
 

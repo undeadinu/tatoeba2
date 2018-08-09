@@ -46,23 +46,26 @@ class AppShell extends Shell {
     }
 
     protected function batchOperation($model, $operation, $options) {
-        assert(!isset($options['order']) || (is_string($options['order']) && strpos($options['order'], '.') !== false));
-
-        $pKey = $this->{$model}->alias.'.'.$this->{$model}->primaryKey;
-        $pKeyShort = $this->{$model}->primaryKey;
-
-        if (!isset($options['order']) || (isset($options['order']) && $options['order'] == $pKeyShort)) {
-            $options['order'] = $pKey;
+        if (!isset($options['order'])) {
+            $options['order'] = $this->{$model}->alias.'.'.$this->{$model}->primaryKey;
         }
-        $order = $options['order'];
-        if ($order != $pKey) {
-            $options['order'] = array($order, $pKey);
+        if (is_string($options['order'])) {
+            $options['order'] = array($options['order']);
+        }
+        $order1 = $options['order'][0];
+        if (count($options['order']) == 2) {
+            $order2 = $options['order'][1];
+        } else {
+            $order2 = $order1;
         }
         if (isset($options['fields'])) {
-            $options['fields'][] = $order;
-            $options['fields'][] = $pKey;
+            foreach ($options['order'] as $field) {
+                $options['fields'][] = $field;
+            }
         }
 
+        $o1parts = explode('.', $order1);
+        $o2parts = explode('.', $order2);
         $proceeded = 0;
         $options = array_merge(
             array(
@@ -79,7 +82,6 @@ class AppShell extends Shell {
         $conditionKey = key($options['conditions']);
         reset($options['conditions']);
 
-        list($orderModel, $orderField) = explode('.', $order);
         $data = array();
         do {
             $data = $this->{$model}->find('all', $options);
@@ -88,9 +90,9 @@ class AppShell extends Shell {
             $proceeded += call_user_func_array(array($this, $operation), $args);
             $lastRow = end($data);
             if ($lastRow) {
-                $lastId = $lastRow[$model][$pKeyShort];
-                $lastValue = $lastRow[$orderModel][$orderField];
-                $options['conditions'][$conditionKey] = $this->_orderCondition($order, $lastValue, $pKey, $lastId);
+                $lastValue1 = $lastRow[ $o1parts[0] ][ $o1parts[1] ];
+                $lastValue2 = $lastRow[ $o2parts[0] ][ $o2parts[1] ];
+                $options['conditions'][$conditionKey] = $this->_orderCondition($order1, $lastValue1, $order2, $lastValue2);
             }
             echo ".";
         } while ($data);

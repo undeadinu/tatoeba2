@@ -32,7 +32,7 @@ class QueueExportTask extends QueueTask {
             'model' => 'Link',
             'findOptions' => array(
                 'fields' => array('sentence_id', 'translation_id'),
-                'order' => 'Link.sentence_id',
+                'order' => array('Link.sentence_id', 'Link.id'),
             ),
         ),
         'contributions.csv' => array(
@@ -40,7 +40,7 @@ class QueueExportTask extends QueueTask {
             'findOptions' => array(
                 'fields' => array('User.username', 'datetime', 'action', 'type', 'sentence_id', 'sentence_lang', 'translation_id', 'text'),
                 'contain' => array('User'),
-                'order' => 'Contribution.datetime',
+                'order' => array('Contribution.datetime', 'Contribution.id'),
             ),
             'remove_csv_file' => true,
         ),
@@ -49,7 +49,7 @@ class QueueExportTask extends QueueTask {
             'findOptions' => array(
                 'fields' => array('id', 'sentence_id', 'User.username', 'created', 'text'),
                 'contain' => array('User'),
-                'order' => 'SentenceComment.created',
+                'order' => array('SentenceComment.created', 'SentenceComment.id'),
             ),
             'remove_csv_file' => true,
             'archive_name' => 'comments.tar.bz2',
