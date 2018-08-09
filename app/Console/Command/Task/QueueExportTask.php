@@ -8,6 +8,7 @@ class QueueExportTask extends QueueTask {
         'Sentence',
         'Link',
         'Contribution',
+        'SentenceComment',
     );
 
     private $weeklyExports = array(
@@ -41,6 +42,16 @@ class QueueExportTask extends QueueTask {
                 'order' => 'Contribution.datetime',
             ),
             'remove_csv_file' => true,
+        ),
+        'sentence_comments.csv' => array(
+            'model' => 'SentenceComment',
+            'findOptions' => array(
+                'fields' => array('id', 'sentence_id', 'User.username', 'created', 'text'),
+                'contain' => array('User'),
+                'order' => 'SentenceComment.created',
+            ),
+            'remove_csv_file' => true,
+            'archive_name' => 'comments.tar.bz2',
         ),
     );
 
