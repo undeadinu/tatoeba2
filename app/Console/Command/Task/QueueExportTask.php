@@ -14,6 +14,7 @@ class QueueExportTask extends QueueTask {
         'SentencesList',
         'SentencesSentencesLists',
         'SentenceAnnotation',
+        'Audio',
     );
 
     private $weeklyExports = array(
@@ -101,6 +102,14 @@ class QueueExportTask extends QueueTask {
             'model' => 'SentenceAnnotation',
             'findOptions' => array(
                 'fields' => array('sentence_id', 'meaning_id', 'text'),
+            ),
+        ),
+        'sentences_with_audio.csv' => array(
+            'model' => 'Audio',
+            'findOptions' => array(
+                'fields' => array('sentence_id', 'User.username', 'User.audio_license', 'User.audio_attribution_url'),
+                'contain' => array('User'),
+                'order' => array('Audio.sentence_id', 'Audio.id'),
             ),
         ),
     );
