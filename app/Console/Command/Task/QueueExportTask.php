@@ -11,6 +11,7 @@ class QueueExportTask extends QueueTask {
         'SentenceComment',
         'Wall',
         'Tag',
+        'SentencesList',
     );
 
     private $weeklyExports = array(
@@ -75,6 +76,14 @@ class QueueExportTask extends QueueTask {
                     'conditions' => array('Tag.id = TagsSentences.tag_id'),
                 )),
                 'order' => array('TagsSentences.sentence_id', 'Tag.name'),
+            ),
+        ),
+        'user_lists.csv' => array(
+            'model' => 'SentencesList',
+            'findOptions' => array(
+                'fields' => array('id', 'User.username', 'created', 'modified', 'name', 'editable_by'),
+                'contain' => array('User'),
+                'conditions' => array('NOT' => array('visibility' => 'private')),
             ),
         ),
     );
