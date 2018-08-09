@@ -183,6 +183,32 @@ class QueueExportTaskTest extends CakeTestCase
         $this->assertEquals(sha1_file($expected), sha1_file($actual));
     }
 
+    public function testExportDataWithSQLDistinct()
+    {
+        $expected = $this->testExportDir.DS.'expected.csv';
+        $this->QueueExportTask->Sentence->query(
+            "SELECT DISTINCT lang "
+           ."FROM sentences "
+           ."ORDER BY lang "
+           ."INTO OUTFILE '$expected'"
+        );
+
+        $actual = $this->testExportDir.DS.'langs.csv';
+        $options = array(
+            'exportDir' => $this->testExportDir,
+        );
+        $this->QueueExportTask->exportData(
+            $actual,
+            'Sentence',
+            array(
+                'fields' => array('DISTINCT lang'),
+                'order' => 'Sentence.lang',
+            )
+        );
+
+        $this->assertEquals(sha1_file($expected), sha1_file($actual));
+    }
+
     public function testCompressFile()
     {
         $file = $this->testExportDir.DS.'export.csv';

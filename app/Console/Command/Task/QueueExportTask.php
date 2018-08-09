@@ -10,6 +10,7 @@ class QueueExportTask extends QueueTask {
         'Contribution',
         'SentenceComment',
         'Wall',
+        'Tag',
     );
 
     private $weeklyExports = array(
@@ -63,6 +64,18 @@ class QueueExportTask extends QueueTask {
             ),
             'remove_csv_file' => true,
             'archive_name' => 'wall.tar.bz2',
+        ),
+        'tags.csv' => array(
+            'model' => 'Tag',
+            'findOptions' => array(
+                'fields' => array('DISTINCT TagsSentences.sentence_id', 'Tag.name'),
+                'joins' => array(array(
+                    'table' => 'tags_sentences',
+                    'alias' => 'TagsSentences',
+                    'conditions' => array('Tag.id = TagsSentences.tag_id'),
+                )),
+                'order' => array('TagsSentences.sentence_id', 'Tag.name'),
+            ),
         ),
     );
 
@@ -193,6 +206,8 @@ class QueueExportTask extends QueueTask {
     private function calculateFieldsMap($row, $modelName, $fields) {
         $map = array();
         foreach ($fields as $cakeField) {
+            $cakeField = str_ireplace('distinct', '', $cakeField);
+            $cakeField = trim($cakeField);
             $parts = explode('.', $cakeField, 2);
             if (count($parts) == 2) {
                 list($model, $field) = $parts;
