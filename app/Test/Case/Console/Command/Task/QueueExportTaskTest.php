@@ -204,6 +204,18 @@ class QueueExportTaskTest extends CakeTestCase
         $this->assertEquals($expectedContents, $archiveContents);
     }
 
+    public function testCompressFileWithArchiveName()
+    {
+        $file = $this->testExportDir.DS.'export.csv';
+        $contents = "Some data.\nAnother line.";
+        file_put_contents($file, $contents);
+        $expectedFile = $this->testExportDir.DS.'specific_name.tar.bz2';
+
+        $this->QueueExportTask->compressFile($file, $expectedFile);
+
+        $this->assertFileExists($expectedFile);
+    }
+
     public function testRun()
     {
         $options = array(
@@ -248,5 +260,28 @@ class QueueExportTaskTest extends CakeTestCase
 
         $this->assertFileExists($expectedArchive);
         $this->assertFileNotExists($notExpectedCSV);
+    }
+
+    public function testRunWithArchiveName()
+    {
+        $options = array(
+            'exportDir' => $this->testExportDir,
+            'exports' => array(
+                'specific_archive_name.csv' => array(
+                    'model' => 'Sentence',
+                    'findOptions' => array(
+                        'fields' => array('id', 'text'),
+                    ),
+                    'archive_name' => 'foobar.tar.bz2',
+                ),
+            ),
+        );
+        $expectedArchive = $this->testExportDir.DS.'foobar.tar.bz2';
+        $expectedCSV = $this->testExportDir.DS.'specific_archive_name.csv';
+
+        $this->QueueExportTask->run($options);
+
+        $this->assertFileExists($expectedArchive);
+        $this->assertFileExists($expectedCSV);
     }
 }

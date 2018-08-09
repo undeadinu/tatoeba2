@@ -100,8 +100,10 @@ class QueueExportTask extends QueueTask {
         }
     }
 
-    public function compressFile($file) {
-        $archive = substr($file, 0, strrpos($file, '.')).'.tar.bz2';
+    public function compressFile($file, $archive = null) {
+        if (is_null($archive)) {
+            $archive = substr($file, 0, strrpos($file, '.')).'.tar.bz2';
+        }
         $descriptorSpec = array(
            0 => array('pipe', 'r'),
            1 => array('file', $archive, 'w'),
@@ -154,7 +156,8 @@ class QueueExportTask extends QueueTask {
                 $export['findOptions']
             );
             if ($ok) {
-                $this->compressFile($completeFilename);
+                $archiveName = isset($export['archive_name']) ? $data['exportDir'].DS.$export['archive_name'] : null;
+                $this->compressFile($completeFilename, $archiveName);
             }
             if (isset($export['remove_csv_file']) && $export['remove_csv_file']) {
                 unlink($completeFilename);
