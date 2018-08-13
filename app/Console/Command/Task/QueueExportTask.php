@@ -59,7 +59,7 @@ class QueueExportTask extends QueueTask {
                 'order' => array('SentenceComment.created', 'SentenceComment.id'),
             ),
             'remove_csv_file' => true,
-            'archive_name' => 'comments.tar.bz2',
+            'archive' => 'comments.tar.bz2',
         ),
         'wall_posts.csv' => array(
             'model' => 'Wall',
@@ -69,7 +69,7 @@ class QueueExportTask extends QueueTask {
                 'order' => 'Wall.id',
             ),
             'remove_csv_file' => true,
-            'archive_name' => 'wall.tar.bz2',
+            'archive' => 'wall.tar.bz2',
         ),
         'tags.csv' => array(
             'model' => 'Tag',
@@ -229,8 +229,13 @@ class QueueExportTask extends QueueTask {
                 $export['findOptions']
             );
             if ($ok) {
-                $archiveName = isset($export['archive_name']) ? $data['exportDir'].DS.$export['archive_name'] : null;
-                $this->compressFile($completeFilename, $archiveName);
+                $archive = isset($export['archive']) ? $export['archive'] : null;
+                if (is_string($archive)) {
+                    $archive = $data['exportDir'].DS.$archive;
+                }
+                if ($archive !== false) {
+                    $this->compressFile($completeFilename, $archive);
+                }
             }
             if (isset($export['remove_csv_file']) && $export['remove_csv_file']) {
                 unlink($completeFilename);

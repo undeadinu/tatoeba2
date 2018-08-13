@@ -298,7 +298,7 @@ class QueueExportTaskTest extends CakeTestCase
                     'findOptions' => array(
                         'fields' => array('id', 'text'),
                     ),
-                    'archive_name' => 'foobar.tar.bz2',
+                    'archive' => 'foobar.tar.bz2',
                 ),
             ),
         );
@@ -308,6 +308,29 @@ class QueueExportTaskTest extends CakeTestCase
         $this->QueueExportTask->run($options);
 
         $this->assertFileExists($expectedArchive);
+        $this->assertFileExists($expectedCSV);
+    }
+
+    public function testRunWithoutArchive()
+    {
+        $options = array(
+            'exportDir' => $this->testExportDir,
+            'exports' => array(
+                'no_archive.csv' => array(
+                    'model' => 'Sentence',
+                    'findOptions' => array(
+                        'fields' => array('id', 'text'),
+                    ),
+                    'archive' => false,
+                ),
+            ),
+        );
+        $notExpectedArchive = $this->testExportDir.DS.'no_archive.tar.bz2';
+        $expectedCSV = $this->testExportDir.DS.'no_archive.csv';
+
+        $this->QueueExportTask->run($options);
+
+        $this->assertFileNotExists($notExpectedArchive);
         $this->assertFileExists($expectedCSV);
     }
 }
